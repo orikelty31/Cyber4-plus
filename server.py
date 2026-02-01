@@ -151,9 +151,9 @@ def handle_client_request(resource, client_socket, image_len):
             logger.debug("Extracted number parameter: " + str(num))
 
             try:
-                num = int(num)
+                num = float(num)
                 logger.debug("Successfully parsed number: " + str(num))
-                next_num = int(num) + 1
+                next_num = float(num) + 1
                 logger.debug("Calculated next number: " + str(next_num))
                 num_len = len(str(next_num))
                 headers = {
@@ -186,8 +186,8 @@ def handle_client_request(resource, client_socket, image_len):
             height , width = variables.split("&")[0].split("=") , variables.split("&")[1].split("=")
             logger.debug("Parsed height variable: " + str(height) + ", width variable: " + str(width))
             try:
-                height = int(height[1])
-                width = int(width[1])
+                height = float(height[1])
+                width = float(width[1])
                 logger.debug("Successfully parsed height: " + str(height) + ", width: " + str(width))
 
                 area = ((height*width)/2)
