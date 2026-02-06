@@ -132,7 +132,7 @@ def handle_client_request(resource, client_socket, image_len):
 
     if resource.startswith('/'):
         resource = resource[1:]
-    print(resource)
+
     if resource.startswith("calculate-next") or resource.startswith("calculate-area") or resource.startswith("upload") or resource.startswith("image"):
         try:
             method , variables = resource.split("?")
