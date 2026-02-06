@@ -43,20 +43,11 @@ def get_file_data(file_name):
     """
     logger.debug("Reading file: " + str(file_name))
     try:
-        file_extension = file_name.split('.')[-1]
-        if file_extension in ['jpg', 'ico', 'gif', 'png']:
-            logger.debug("Opening " + str(file_name) + " in binary mode")
-            with open(file_name, 'rb') as f:
-                data = f.read()
-                logger.info("Successfully read binary file " + str(file_name) + " (" + str(len(data)) + " bytes)")
-                return data
-        else:
-            logger.debug("Opening " + str(file_name) + " in text mode")
-            with open(file_name, 'r') as f:
-                content = f.read()
-                data = content.encode()
-                logger.info("Successfully read text file " + str(file_name) + " (" + str(len(data)) + " bytes)")
-                return data
+        logger.debug("Opening " + str(file_name) + " in binary mode")
+        with open(file_name, 'rb') as f:
+            data = f.read()
+            logger.info("Successfully read binary file " + str(file_name) + " (" + str(len(data)) + " bytes)")
+            return data
     except FileNotFoundError:
         logger.error("File not found: " + str(file_name))
         return None
