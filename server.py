@@ -132,126 +132,127 @@ def handle_client_request(resource, client_socket, image_len):
 
     if resource.startswith('/'):
         resource = resource[1:]
+    print(resource)
+    if resource.startswith("calculate-next") or resource.startswith("calculate-area") or resource.startswith("upload") or resource.startswith("image"):
+        try:
+            method , variables = resource.split("?")
+            logger.debug("Parsed method: " + str(method) + ", variables: " + str(variables))
+            if method == "calculate-next":
+                logger.info("Handling calculate-next request")
+                num = variables.split("=")[1]
+                logger.debug("Extracted number parameter: " + str(num))
 
-    try:
-        method , variables = resource.split("?")
-        logger.debug("Parsed method: " + str(method) + ", variables: " + str(variables))
-        if method == "calculate-next":
-            logger.info("Handling calculate-next request")
-            num = variables.split("=")[1]
-            logger.debug("Extracted number parameter: " + str(num))
+                try:
+                    num = float(num)
+                    logger.debug("Successfully parsed number: " + str(num))
+                    next_num = float(num) + 1
+                    logger.debug("Calculated next number: " + str(next_num))
+                    num_len = len(str(next_num))
+                    headers = {
+                        'Content-Type': 'text/plain',
+                        'Content-Length': str(num_len)
 
-            try:
-                num = float(num)
-                logger.debug("Successfully parsed number: " + str(num))
-                next_num = float(num) + 1
-                logger.debug("Calculated next number: " + str(next_num))
-                num_len = len(str(next_num))
+                    }
+                    http_response = build_http_response(200, 'OK', headers)
+                    client_socket.send(http_response)
+                    client_socket.send(str(next_num).encode())
+                    logger.info("Sent calculate-next response: " + str(next_num))
+                    return
+
+                except Exception as e:
+                    print("Error: An String Was Submitted , " + str(e))
+                    logger.error("Failed to parse number in calculate-next: " + str(e))
+                    headers = {
+                        'Content-Type': 'text/plain',
+                        'Content-Length': "0"
+
+                    }
+                    http_response = build_http_response(400, 'Bad Request', headers)
+                    client_socket.send(http_response)
+                    logger.info("Sent 400 Bad Request response for calculate-next")
+                    return
+
+
+            if method == "calculate-area":
+                logger.info("Handling calculate-area request")
+                height , width = variables.split("&")[0].split("=") , variables.split("&")[1].split("=")
+                logger.debug("Parsed height variable: " + str(height) + ", width variable: " + str(width))
+                try:
+                    height = float(height[1])
+                    width = float(width[1])
+                    logger.debug("Successfully parsed height: " + str(height) + ", width: " + str(width))
+
+                    area = ((height*width)/2)
+                    logger.debug("Calculated area: " + str(area))
+                    area_len = len(str(area))
+                    headers = {
+                        'Content-Type': 'text/plain',
+                        'Content-Length': str(area_len)
+                    }
+                    http_response = build_http_response(200, 'OK', headers)
+                    client_socket.send(http_response)
+                    client_socket.send(str(area).encode())
+                    logger.info("Sent calculate-area response: " + str(area))
+                    return
+                except Exception as e:
+                    print("Error : An String Was Submitted , " + str(e))
+                    logger.error("Failed to parse height/width in calculate-area: " + str(e))
+                    headers = {
+                        'Content-Type': 'text/plain',
+                        'Content-Length': "0"
+                    }
+                    http_response = build_http_response(400, 'Bad Request', headers)
+                    client_socket.send(http_response)
+                    logger.info("Sent 400 Bad Request response for calculate-area")
+                    return
+
+            if method == 'upload':
+                logger.info("Handling upload request")
+                file_name = variables.split("=")[1]
+                logger.debug("Upload file name: " + str(file_name))
+                logger.debug("Expecting " + str(image_len) + " bytes of image data")
+                data_to_receive = 0
+                photo_data = b''
+                while data_to_receive < int(image_len):
+                    photo_data += client_socket.recv(1)
+                    data_to_receive+=1
+                logger.debug("Received " + str(len(photo_data)) + " bytes of image data")
+                with open(UPLOAD_IMAGE+file_name, 'wb') as f:
+                    f.write(photo_data)
+                logger.info("Successfully saved uploaded file: " + str(UPLOAD_IMAGE+file_name))
                 headers = {
-                    'Content-Type': 'text/plain',
-                    'Content-Length': str(num_len)
-
+                    'Content-Type': "text/plain",
+                    'Content-Length': '0'
                 }
                 http_response = build_http_response(200, 'OK', headers)
                 client_socket.send(http_response)
-                client_socket.send(str(next_num).encode())
-                logger.info("Sent calculate-next response: " + str(next_num))
+                logger.info("Sent 200 OK response for upload")
                 return
-
-            except Exception as e:
-                print("Error: An String Was Submitted , " + str(e))
-                logger.error("Failed to parse number in calculate-next: " + str(e))
+            if method == 'image':
+                logger.info("Handling image request")
+                file_name = variables.split("=")[1]
+                logger.debug("Image file name: " + str(file_name))
+                image_path = UPLOAD_IMAGE + file_name
+                logger.debug("Reading image from: " + str(image_path))
+                with open(image_path , 'rb') as f:
+                   photo_data = f.read()
+                logger.debug("Read " + str(len(photo_data)) + " bytes from image file")
+                photo_len = str(len(photo_data))
                 headers = {
-                    'Content-Type': 'text/plain',
-                    'Content-Length': "0"
-
-                }
-                http_response = build_http_response(400, 'Bad Request', headers)
-                client_socket.send(http_response)
-                logger.info("Sent 400 Bad Request response for calculate-next")
-                return
-
-
-        if method == "calculate-area":
-            logger.info("Handling calculate-area request")
-            height , width = variables.split("&")[0].split("=") , variables.split("&")[1].split("=")
-            logger.debug("Parsed height variable: " + str(height) + ", width variable: " + str(width))
-            try:
-                height = float(height[1])
-                width = float(width[1])
-                logger.debug("Successfully parsed height: " + str(height) + ", width: " + str(width))
-
-                area = ((height*width)/2)
-                logger.debug("Calculated area: " + str(area))
-                area_len = len(str(area))
-                headers = {
-                    'Content-Type': 'text/plain',
-                    'Content-Length': str(area_len)
+                    'Content-Type': "text/plain",
+                    'Content-Length': photo_len
                 }
                 http_response = build_http_response(200, 'OK', headers)
                 client_socket.send(http_response)
-                client_socket.send(str(area).encode())
-                logger.info("Sent calculate-area response: " + str(area))
-                return
-            except Exception as e:
-                print("Error : An String Was Submitted , " + str(e))
-                logger.error("Failed to parse height/width in calculate-area: " + str(e))
-                headers = {
-                    'Content-Type': 'text/plain',
-                    'Content-Length': "0"
-                }
-                http_response = build_http_response(400, 'Bad Request', headers)
-                client_socket.send(http_response)
-                logger.info("Sent 400 Bad Request response for calculate-area")
+                client_socket.send(photo_data)
+                logger.info("Sent image response: " + str(file_name) + " (" + str(photo_len) + " bytes)")
                 return
 
-        if method == 'upload':
-            logger.info("Handling upload request")
-            file_name = variables.split("=")[1]
-            logger.debug("Upload file name: " + str(file_name))
-            logger.debug("Expecting " + str(image_len) + " bytes of image data")
-            data_to_receive = 0
-            photo_data = b''
-            while data_to_receive < int(image_len):
-                photo_data += client_socket.recv(1)
-                data_to_receive+=1
-            logger.debug("Received " + str(len(photo_data)) + " bytes of image data")
-            with open(UPLOAD_IMAGE+file_name, 'wb') as f:
-                f.write(photo_data)
-            logger.info("Successfully saved uploaded file: " + str(UPLOAD_IMAGE+file_name))
-            headers = {
-                'Content-Type': "text/plain",
-                'Content-Length': '0'
-            }
-            http_response = build_http_response(200, 'OK', headers)
-            client_socket.send(http_response)
-            logger.info("Sent 200 OK response for upload")
-            return
-        if method == 'image':
-            logger.info("Handling image request")
-            file_name = variables.split("=")[1]
-            logger.debug("Image file name: " + str(file_name))
-            image_path = UPLOAD_IMAGE + file_name
-            logger.debug("Reading image from: " + str(image_path))
-            with open(image_path , 'rb') as f:
-               photo_data = f.read()
-            logger.debug("Read " + str(len(photo_data)) + " bytes from image file")
-            photo_len = str(len(photo_data))
-            headers = {
-                'Content-Type': "text/plain",
-                'Content-Length': photo_len
-            }
-            http_response = build_http_response(200, 'OK', headers)
-            client_socket.send(http_response)
-            client_socket.send(photo_data)
-            logger.info("Sent image response: " + str(file_name) + " (" + str(photo_len) + " bytes)")
-            return
 
 
-
-    except Exception as e:
-        print("Error " + str(e))
-        logger.error("Error parsing resource with query parameters: " + str(e))
+        except Exception as e:
+            print("Error " + str(e))
+            logger.error("Error parsing resource with query parameters: " + str(e))
 
 
 
